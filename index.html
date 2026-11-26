@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bản đồ khái niệm 3D · Kiểm toán CNTT cấp độ 1</title>
+<meta name="description" content="Bản đồ 3D tương tác các khái niệm và mối liên hệ trong tài liệu Kiểm toán công nghệ thông tin cấp độ 1.">
+<style>
+  :root {
+    --bg: #0b1020; --panel: rgba(16, 22, 42, .86); --line: rgba(255,255,255,.10);
+    --text: #e8ecf6; --muted: #9aa6c2; --accent: #f2c14e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 14px/1.5 "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif; overflow: hidden; }
+  #graph { position: fixed; inset: 0; }
+  .panel { position: fixed; background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 10px 40px rgba(0,0,0,.35); }
+  #left { top: 14px; left: 14px; width: 300px; max-height: calc(100% - 28px); overflow: auto; padding: 16px; }
+  #right { top: 14px; right: 14px; width: 360px; max-height: calc(100% - 28px); overflow: auto; padding: 18px; display: none; }
+  h1 { font-size: 17px; margin: 0 0 2px; letter-spacing: .2px; }
+  .sub { color: var(--muted); font-size: 12.5px; margin-bottom: 12px; }
+  .sec { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .sec-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
+  input[type=search] { width: 100%; padding: 9px 11px; border-radius: 9px; border: 1px solid var(--line);
+    background: rgba(255,255,255,.06); color: var(--text); font: inherit; outline: none; }
+  input[type=search]:focus { border-color: var(--accent); }
+  #results { margin-top: 6px; }
+  #results div { padding: 5px 8px; border-radius: 7px; cursor: pointer; font-size: 13px; }
+  #results div:hover { background: rgba(255,255,255,.08); }
+  .legend label { display: flex; align-items: center; gap: 8px; padding: 3px 0; cursor: pointer; font-size: 13px; user-select: none; }
+  .legend input { accent-color: var(--accent); }
+  .dot { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+  .cnt { margin-left: auto; color: var(--muted); font-size: 12px; }
+  .btns { display: flex; flex-wrap: wrap; gap: 6px; }
+  button { background: rgba(255,255,255,.07); color: var(--text); border: 1px solid var(--line); border-radius: 8px;
+    padding: 7px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+  button:hover { background: rgba(255,255,255,.14); }
+  button.primary { background: var(--accent); color: #1a1406; border-color: var(--accent); font-weight: 600; }
+  #pathBox { display: flex; align-items: center; gap: 6px; }
+  #pathInfo { font-size: 12.5px; color: var(--muted); margin-top: 6px; min-height: 18px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 9px; border-radius: 99px;
+    background: rgba(255,255,255,.08); }
+  #right h2 { font-size: 20px; margin: 10px 0 4px; line-height: 1.3; }
+  .ref { color: var(--muted); font-size: 12.5px; }
+  .desc { margin: 12px 0 4px; font-size: 14.5px; line-height: 1.6; }
+  .rel { list-style: none; padding: 0; margin: 0; }
+  .rel li { padding: 6px 8px; border-radius: 8px; cursor: pointer; font-size: 13.5px; display: flex; gap: 6px; align-items: baseline; }
+  .rel li:hover { background: rgba(255,255,255,.08); }
+  .rel .verb { color: var(--accent); font-style: italic; white-space: nowrap; }
+  .close { position: absolute; top: 10px; right: 10px; padding: 2px 9px; }
+  #hint { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); font-size: 12px; color: var(--muted);
+    background: var(--panel); border: 1px solid var(--line); padding: 6px 12px; border-radius: 99px; white-space: nowrap; }
+  #listModal { position: fixed; inset: 0; background: rgba(5,8,18,.75); display: none; z-index: 20; }
+  #listModal .box { position: absolute; inset: 4vh 5vw; background: #10162a; border: 1px solid var(--line); border-radius: 14px;
+    overflow: auto; padding: 22px 26px; }
+  #listModal h3 { margin: 22px 0 8px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  #listModal table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  #listModal td { border-top: 1px solid var(--line); padding: 8px 10px; vertical-align: top; }
+  #listModal td:first-child { width: 230px; font-weight: 600; cursor: pointer; }
+  #listModal td:first-child:hover { color: var(--accent); }
+  #listModal td:nth-child(2) { width: 150px; color: var(--muted); font-size: 12px; }
+  .graph-tooltip { font: 13px "Segoe UI", system-ui, sans-serif !important; background: rgba(10,14,28,.92) !important;
+    padding: 6px 10px !important; border-radius: 8px !important; border: 1px solid var(--line); max-width: 320px; }
+  #toggleLeft { display: none; }
+  @media (max-width: 760px) {
+    #left { width: auto; right: 14px; max-height: 46vh; }
+    #left.collapsed > *:not(.head) { display: none; }
+    #toggleLeft { display: inline-block; position: absolute; top: 12px; right: 12px; padding: 2px 9px; }
+    #right { top: auto; bottom: 14px; left: 14px; right: 14px; width: auto; max-height: 48vh; }
+    #hint { display: none; }
+    #listModal .box { inset: 2vh 2vw; padding: 16px; }
+    #listModal td:first-child { width: 40%; }
+    #listModal td:nth-child(2) { display: none; }
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+    "three": "https://esm.sh/three@0.181.0",
+    "three/": "https://esm.sh/three@0.181.0/"
+} }
+</script>
+</head>
+<body>
+<div id="graph"></div>
+
+<div id="left" class="panel">
+  <div class="head">
+    <h1>Bản đồ khái niệm 3D</h1>
+    <div class="sub">Kiểm toán Công nghệ thông tin · Cấp độ 1<br>Chuyên đề 1 – 2 – 3</div>
+    <button id="toggleLeft" title="Thu gọn">☰</button>
+  </div>
+
+  <input id="search" type="search" placeholder="Tìm khái niệm… (vd: rủi ro, CAATs)" autocomplete="off">
+  <div id="results"></div>
+
+  <div class="sec">
+    <div class="sec-title">Lộ trình học gợi ý</div>
+    <div id="pathBox">
+      <button id="prev">◀</button>
+      <button id="start" class="primary" style="flex:1">Bắt đầu lộ trình</button>
+      <button id="next">▶</button>
+    </div>
+    <div id="pathInfo"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">Nhóm khái niệm (bật/tắt)</div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <div class="sec">
+    <div class="btns">
+      <button id="btnList">📋 Danh sách khái niệm</button>
+      <button id="btnRotate">⟳ Tự xoay</button>
+      <button id="btnReset">⌂ Toàn cảnh</button>
+    </div>
+  </div>
+</div>
+
+<div id="right" class="panel">
+  <button class="close" id="closeRight">✕</button>
+  <span class="chip" id="dChip"></span>
+  <h2 id="dName"></h2>
+  <div class="ref" id="dRef"></div>
+  <div class="desc" id="dDesc"></div>
+  <div class="sec">
+    <div class="sec-title">Liên hệ đi ra</div>
+    <ul class="rel" id="dOut"></ul>
+  </div>
+  <div class="sec">
+    <div class="sec-title">Liên hệ đi vào</div>
+    <ul class="rel" id="dIn"></ul>
+  </div>
+</div>
+
+<div id="hint">Kéo để xoay · Cuộn để phóng to · Bấm vào một nút để xem giải thích và các mối liên hệ</div>
+
+<div id="listModal">
+  <div class="box">
+    <button class="close" id="closeList">✕</button>
+    <h2 style="margin:0">Danh sách khái niệm quan trọng</h2>
+    <div class="sub">Bấm vào tên khái niệm để xem vị trí của nó trên bản đồ 3D.</div>
+    <div id="listBody"></div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script type="module">
+import ForceGraph3D from "https://esm.sh/3d-force-graph@1.80.2?external=three";
+import SpriteText from "https://esm.sh/three-spritetext@1.9.6?external=three";
+
+const G = window.GROUPS;
+const nodes = window.NODES.map(n => ({ ...n }));
+const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
+const links = window.LINKS.map(([s, t, label]) => ({ source: s, target: t, label }));
+const PATH = window.PATH;
+
+// Kề nhau
+const nbr = {}, lnk = {};
+nodes.forEach(n => { nbr[n.id] = new Set(); lnk[n.id] = []; });
+links.forEach(l => { nbr[l.source].add(l.target); nbr[l.target].add(l.source); lnk[l.source].push(l); lnk[l.target].push(l); });
+
+const idOf = x => (typeof x === "object" ? x.id : x);
+const REL = 2.6;
+const radius = n => Math.cbrt(n.w * n.w * 2) * REL;
+
+let selected = null, hover = null;
+const hlNodes = new Set(), hlLinks = new Set();
+const active = new Set(Object.keys(G));
+
+const isMobile = matchMedia("(max-width: 760px)").matches;
+
+const graph = ForceGraph3D({ controlType: "orbit" })(document.getElementById("graph"))
+  .backgroundColor("#0b1020")
+  .graphData({ nodes, links })
+  .nodeRelSize(REL)
+  .nodeVal(n => n.w * n.w * 2)
+  .nodeOpacity(0.95)
+  .nodeResolution(16)
+  .nodeLabel(n => `<b>${n.name}</b><br><span style="color:#9aa6c2">${G[n.g].name}</span>`)
+  .nodeColor(n => {
+    const c = G[n.g].color;
+    if (!hlNodes.size || hlNodes.has(n)) return c;
+    return "rgba(90,100,130,0.35)";
+  })
+  .nodeVisibility(n => active.has(n.g))
+  .nodeThreeObjectExtend(true)
+  .nodeThreeObject(n => {
+    const s = new SpriteText(n.name);
+    s.color = "#f4f6fb";
+    s.textHeight = n.w === 3 ? 6.5 : n.w === 2 ? 5 : 4.2;
+    s.fontWeight = n.w === 3 ? "700" : "500";
+    s.fontFace = "Segoe UI, Arial, sans-serif";
+    s.strokeWidth = 0.6; s.strokeColor = "#0b1020";
+    s.position.y = -(radius(n) + s.textHeight * 0.9);
+    s.material.depthWrite = false;
+    n.__label = s;
+    return s;
+  })
+  .linkVisibility(l => active.has(l.source.g ?? byId[idOf(l.source)].g) && active.has(l.target.g ?? byId[idOf(l.target)].g))
+  .linkColor(l => hlLinks.has(l) ? "#ffffff" : "rgba(170,185,220,0.55)")
+  .linkOpacity(0.35)
+  .linkWidth(l => hlLinks.has(l) ? 0.6 : 0.2)
+  .linkDirectionalArrowLength(l => hlLinks.has(l) ? 4 : 2.2)
+  .linkDirectionalArrowRelPos(1)
+  .linkDirectionalArrowColor(l => hlLinks.has(l) ? "#f2c14e" : "rgba(170,185,220,0.6)")
+  .linkDirectionalParticles(l => hlLinks.has(l) ? 3 : 0)
+  .linkDirectionalParticleWidth(1.6)
+  .linkDirectionalParticleColor(() => "#f2c14e")
+  .linkLabel(l => `${l.source.name} <i style="color:#f2c14e">— ${l.label} →</i> ${l.target.name}`)
+  .linkThreeObjectExtend(true)
+  .linkThreeObject(l => {
+    const s = new SpriteText(l.label);
+    s.color = "#f2c14e"; s.textHeight = 4;
+    s.backgroundColor = "rgba(11,16,32,0.75)"; s.padding = 1; s.borderRadius = 2;
+    s.visible = false; s.material.depthWrite = false;
+    l.__label = s;
+    return s;
+  })
+  .linkPositionUpdate((s, { start, end }) => {
+    Object.assign(s.position, { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2, z: (start.z + end.z) / 2 });
+  })
+  .onNodeHover(n => { document.body.style.cursor = n ? "pointer" : null; })
+  .onNodeClick(n => select(n.id, true))
+  .onBackgroundClick(() => clearSel());
+
+graph.showNavInfo(false);
+graph.d3Force("charge").strength(-220);
+graph.d3Force("link").distance(l => 42 + 8 * (3 - Math.min(l.source.w ?? 2, l.target.w ?? 2)));
+// Tính sẵn bố cục trước khi vẽ để trang hiển thị ngay, kể cả trên máy yếu
+graph.warmupTicks(260).cooldownTicks(60).graphData({ nodes, links });
+function overview(ms = 1000) {
+  const n = nodes.filter(n => n.x !== undefined);
+  const c = ["x", "y", "z"].map(k => n.reduce((a, p) => a + p[k], 0) / (n.length || 1));
+  const rs = n.map(p => Math.hypot(p.x - c[0], p.y - c[1], p.z - c[2])).sort((a, b) => a - b);
+  const r = Math.max(rs[Math.floor(rs.length * 0.85)] || 100, 60);
+  const d = r * (isMobile ? 2.8 : 2.0);
+  graph.cameraPosition({ x: c[0], y: c[1], z: c[2] + d }, { x: c[0], y: c[1], z: c[2] }, ms);
+}
+setTimeout(() => { if (!selected) overview(0); }, 50);
+
+const controls = graph.controls();
+controls.autoRotate = true; controls.autoRotateSpeed = 0.6;
+const stopRotate = () => { controls.autoRotate = false; };
+graph.renderer().domElement.addEventListener("pointerdown", stopRotate);
+addEventListener("resize", () => graph.width(innerWidth).height(innerHeight));
+
+function refresh() {
+  nodes.forEach(n => { if (n.__label) n.__label.material.opacity = (!hlNodes.size || hlNodes.has(n)) ? 1 : 0.12; });
+  links.forEach(l => { if (l.__label) l.__label.visible = hlLinks.has(l); });
+  graph.nodeColor(graph.nodeColor()).linkColor(graph.linkColor()).linkWidth(graph.linkWidth())
+       .linkDirectionalParticles(graph.linkDirectionalParticles())
+       .linkDirectionalArrowLength(graph.linkDirectionalArrowLength())
+       .linkDirectionalArrowColor(graph.linkDirectionalArrowColor());
+}
+
+function focus(n) {
+  if (n.x === undefined) return;
+  const dist = 280, r = Math.hypot(n.x, n.y, n.z) || 1, k = 1 + dist / r;
+  graph.cameraPosition({ x: n.x * k, y: n.y * k, z: n.z * k }, n, 1100);
+}
+
+function select(id, doFocus) {
+  const n = byId[id]; if (!n) return;
+  if (!active.has(n.g)) { active.add(n.g); syncLegend(); applyVisibility(); }
+  selected = n; stopRotate();
+  hlNodes.clear(); hlLinks.clear();
+  hlNodes.add(n);
+  lnk[id].forEach(l => { hlLinks.add(l); hlNodes.add(byId[idOf(l.source)]); hlNodes.add(byId[idOf(l.target)]); });
+  refresh(); showDetail(n);
+  if (doFocus) focus(n);
+  history.replaceState(null, "", "#" + id);
+}
+
+function clearSel() {
+  selected = null; hlNodes.clear(); hlLinks.clear(); refresh();
+  document.getElementById("right").style.display = "none";
+  history.replaceState(null, "", location.pathname);
+}
+
+function relItem(other, verb, outgoing) {
+  const li = document.createElement("li");
+  const dot = `<span class="dot" style="background:${G[other.g].color}"></span>`;
+  li.innerHTML = outgoing
+    ? `<span class="verb">${verb} →</span> ${dot}<span>${other.name}</span>`
+    : `${dot}<span>${other.name}</span> <span class="verb">→ ${verb}</span>`;
+  li.onclick = () => select(other.id, true);
+  return li;
+}
+
+function showDetail(n) {
+  const g = G[n.g];
+  document.getElementById("dChip").innerHTML = `<span class="dot" style="background:${g.color}"></span>${g.name}`;
+  document.getElementById("dName").textContent = n.name;
+  document.getElementById("dRef").textContent = "Vị trí trong tài liệu: " + n.ref;
+  document.getElementById("dDesc").textContent = n.d;
+  const out = document.getElementById("dOut"), inn = document.getElementById("dIn");
+  out.innerHTML = ""; inn.innerHTML = "";
+  lnk[n.id].forEach(l => {
+    const s = byId[idOf(l.source)], t = byId[idOf(l.target)];
+    if (s === n) out.appendChild(relItem(t, l.label, true)); else inn.appendChild(relItem(s, l.label, false));
+  });
+  if (!out.children.length) out.innerHTML = `<li style="cursor:default;color:var(--muted)">—</li>`;
+  if (!inn.children.length) inn.innerHTML = `<li style="cursor:default;color:var(--muted)">—</li>`;
+  document.getElementById("right").style.display = "block";
+  document.getElementById("right").scrollTop = 0;
+}
+document.getElementById("closeRight").onclick = clearSel;
+
+// Chú giải nhóm
+const legend = document.getElementById("legend");
+function syncLegend() { legend.querySelectorAll("input").forEach(i => i.checked = active.has(i.value)); }
+function applyVisibility() { graph.nodeVisibility(graph.nodeVisibility()).linkVisibility(graph.linkVisibility()); }
+Object.entries(G).forEach(([k, g]) => {
+  const c = nodes.filter(n => n.g === k).length;
+  const lab = document.createElement("label");
+  lab.innerHTML = `<input type="checkbox" value="${k}" checked><span class="dot" style="background:${g.color}"></span>${g.name}<span class="cnt">${c}</span>`;
+  lab.querySelector("input").onchange = e => { e.target.checked ? active.add(k) : active.delete(k); applyVisibility(); };
+  legend.appendChild(lab);
+});
+
+// Tìm kiếm (không phân biệt dấu)
+const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
+const search = document.getElementById("search"), results = document.getElementById("results");
+search.addEventListener("input", () => {
+  const q = norm(search.value.trim()); results.innerHTML = "";
+  if (!q) return;
+  nodes.filter(n => norm(n.name + " " + n.d).includes(q)).slice(0, 8).forEach(n => {
+    const d = document.createElement("div");
+    d.innerHTML = `<span class="dot" style="display:inline-block;background:${G[n.g].color};margin-right:6px"></span>${n.name}`;
+    d.onclick = () => { select(n.id, true); results.innerHTML = ""; search.value = ""; };
+    results.appendChild(d);
+  });
+});
+search.addEventListener("keydown", e => { if (e.key === "Enter" && results.firstChild) results.firstChild.click(); });
+
+// Lộ trình học
+let step = -1;
+const pathInfo = document.getElementById("pathInfo"), startBtn = document.getElementById("start");
+function goStep(i) {
+  step = (i + PATH.length) % PATH.length;
+  const n = byId[PATH[step]];
+  select(n.id, true);
+  startBtn.textContent = `Bước ${step + 1}/${PATH.length}`;
+  pathInfo.textContent = n.name;
+}
+startBtn.onclick = () => goStep(step < 0 ? 0 : step);
+document.getElementById("next").onclick = () => goStep(step + 1);
+document.getElementById("prev").onclick = () => goStep(step - 1);
+
+// Nút khác
+document.getElementById("btnRotate").onclick = () => { controls.autoRotate = !controls.autoRotate; };
+document.getElementById("btnReset").onclick = () => { clearSel(); overview(900); };
+document.getElementById("toggleLeft").onclick = () => document.getElementById("left").classList.toggle("collapsed");
+if (isMobile) document.getElementById("left").classList.add("collapsed");
+
+// Danh sách khái niệm
+const listBody = document.getElementById("listBody");
+Object.entries(G).forEach(([k, g]) => {
+  const h = document.createElement("h3");
+  h.innerHTML = `<span class="dot" style="background:${g.color}"></span>${g.name}`;
+  listBody.appendChild(h);
+  const tb = document.createElement("table");
+  nodes.filter(n => n.g === k).forEach(n => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${n.name}</td><td>${n.ref}</td><td>${n.d}</td>`;
+    tr.firstChild.onclick = () => { document.getElementById("listModal").style.display = "none"; select(n.id, true); };
+    tb.appendChild(tr);
+  });
+  listBody.appendChild(tb);
+});
+document.getElementById("btnList").onclick = () => document.getElementById("listModal").style.display = "block";
+document.getElementById("closeList").onclick = () => document.getElementById("listModal").style.display = "none";
+addEventListener("keydown", e => {
+  if (e.key === "Escape") { document.getElementById("listModal").style.display = "none"; clearSel(); }
+  if (e.target.tagName === "INPUT") return;
+  if (e.key === "ArrowRight") goStep(step + 1);
+  if (e.key === "ArrowLeft") goStep(step - 1);
+});
+
+// Mở thẳng một khái niệm qua #id
+const initial = decodeURIComponent(location.hash.slice(1));
+if (byId[initial]) setTimeout(() => select(initial, true), 2500);
+</script>
+</body>
+</html>
